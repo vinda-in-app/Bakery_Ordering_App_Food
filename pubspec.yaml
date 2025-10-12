@@ -1,0 +1,28 @@
+name: bakery_order_app
+description: "Project UTS Kelompok Semester 5 Ordering App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.0.0
+  sqflite: ^2.2.8+4
+  sqflite_common_ffi: ^2.3.2
+  path: ^1.8.3
+  path_provider: ^2.0.15
+  flutter_colorpicker: ^1.0.4
+  file_picker: ^8.1.2
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
