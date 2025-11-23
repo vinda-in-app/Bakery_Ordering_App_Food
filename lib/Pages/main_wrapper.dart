@@ -73,9 +73,9 @@ class MainWrapperState extends State<MainWrapper> {
           currentIndex: selectedIndex,
           onTap: changeTab, // Memanggil changeTab saat ikon diklik
           type: BottomNavigationBarType.fixed, // Mempertahankan semua ikon
-          backgroundColor: baseColor,
-          selectedItemColor: primaryColor,
-          unselectedItemColor: primaryColor.withOpacity(0.5),
+          backgroundColor: primaryColor,
+          selectedItemColor: baseColor,
+          unselectedItemColor: baseColor.withOpacity(0.5),
           selectedLabelStyle: GoogleFonts.didactGothic(
             fontWeight: FontWeight.bold,
           ),
@@ -91,7 +91,7 @@ class MainWrapperState extends State<MainWrapper> {
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.shopping_bag),
-              label: 'ORDER',
+              label: 'CART',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.receipt_long),

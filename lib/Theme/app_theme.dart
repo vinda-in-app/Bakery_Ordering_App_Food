@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 // --- DEKLARASI KONSTANTA WARNA GLOBAL ---
 // Dideklarasikan di luar class agar bisa diakses langsung (import '...')
-const Color baseColor = Color(0xFFF9F7F5); // Krem (Latar Belakang)
+const Color baseColor = Color(0xFFE3EFDD); // Krem (Latar Belakang)
 const Color primaryColor = Color(0xFF6B8E5F); // Hijau Zaitun (Utama/Teks)
-const Color secondaryColor = Color(0xFFE4BC6E); // Emas/Kuning (Aksen Sekunder)
+const Color secondaryColor = Color(0xFFDFB563); // Emas/Kuning (Aksen Sekunder)
 const Color accentColor = Color(0xFFD34F4F); // Merah Tua (Aksen/Peringatan)
 
 // Font Fredoka untuk Judul

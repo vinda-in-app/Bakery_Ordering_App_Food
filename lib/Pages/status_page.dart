@@ -32,7 +32,7 @@ class OrderStatusPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title.toUpperCase(), style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: isActive || isCompleted ? primaryColor : primaryColor.withOpacity(0.6))),
-              Text(subtitle, style: GoogleFonts.didactGothic(fontSize: 14, color: isActive || isCompleted ? primaryColor : primaryColor.withOpacity(0.6))),
+              Text(subtitle, style: GoogleFonts.didactGothic(fontSize: 16, color: isActive || isCompleted ? primaryColor : primaryColor.withOpacity(0.6))),
               const SizedBox(height: 10),
             ],
           ),
@@ -66,8 +66,8 @@ class OrderStatusPage extends StatelessWidget {
 
             if (isReadyForPickup)
               ElevatedButton(
-                onPressed: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selamat menikmati! Pesanan ditandai selesai.'), backgroundColor: accentColor)); },
-                child: Text('SUDAH DIAMBIL', style: GoogleFonts.fredoka(fontSize: 18)),
+                onPressed: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selamat menikmati! Pesanan Anda telah diambil.'), backgroundColor: accentColor)); },
+                child: Text('SUDAH DIAMBIL', style: GoogleFonts.fredoka(fontSize: 20)),
               ),
             const SizedBox(height: 15),
             Text('Terima kasih telah berbelanja di The Cozy Oven Bakery!', textAlign: TextAlign.center, style: GoogleFonts.didactGothic(color: primaryColor)),

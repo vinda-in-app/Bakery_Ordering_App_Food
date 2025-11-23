@@ -121,15 +121,15 @@ class HomePage extends StatelessWidget {
                     Text(
                       'WELCOME DEAR,',
                       style: GoogleFonts.fredoka(
-                        fontSize: 28,
+                        fontSize: 29,
                         fontWeight: FontWeight.w600,
                         color: primaryColor,
                       ),
                     ),
                     Text(
-                      '"${sessionData.username}"',
+                      '"${sessionData.name}"',
                       style: GoogleFonts.fredoka(
-                        fontSize: 36,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: primaryColor,
                       ),
@@ -138,11 +138,11 @@ class HomePage extends StatelessWidget {
                 ),
                 Column(
                   children: [
-                    const Icon(Icons.monetization_on, size: 30, color: secondaryColor),
+                    const Icon(Icons.monetization_on, size: 40, color: secondaryColor),
                     Text(
                       '${sessionData.userPoints.toStringAsFixed(0)} Points',
                       style: GoogleFonts.didactGothic(
-                        fontSize: 18,
+                        fontSize: 16,
                         color: primaryColor,
                         fontWeight: FontWeight.bold,
                       ),
@@ -173,7 +173,7 @@ class HomePage extends StatelessWidget {
                     context: context,
                     icon: Icons.store,
                     title: 'Pick Up',
-                    subtitle: 'Ambil pesanan Anda langsung di toko.',
+                    subtitle: 'Ambil pesanan Anda langsung di toko secara langsung.',
                     isAvailable: true,
                   ),
                 ),
@@ -269,7 +269,7 @@ class HomePage extends StatelessWidget {
                         const Icon(Icons.business, size: 30, color: baseColor),
                         const SizedBox(height: 5),
                         Text(
-                          'ABOUT US',
+                          'ABOUT OUR BAKERY',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.fredoka(
                             fontSize: 18,

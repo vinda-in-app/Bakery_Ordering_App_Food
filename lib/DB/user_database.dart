@@ -15,11 +15,11 @@ class UserDatabase {
       name: "Pelanggan Setia",
       username: "pelanggansetia",
       email: "pelanggan@email.com",
-      password: "123", // Password untuk akun mock
+      password: "123456", // Password untuk akun mock
       address: "Jl. Kenari Raya, RT. 005 / RW. 007, Poris Jaya, Kec. Batuceper, Kota Tangerang, Banten 15122",
-      gender: "Women (Mock)",
-      birthdate: "01/01/1990 (Mock)",
-      birthplace: "Jakarta (Mock)",
+      gender: "Women",
+      birthdate: "01/01/1990",
+      birthplace: "Jakarta",
       userPoints: 1250,
       shoppingCart: [],
       selectedPaymentMethod: 'Debit',

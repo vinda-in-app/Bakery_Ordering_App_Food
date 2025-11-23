@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 import '../Theme/app_theme.dart';
 import '../DB/user_database.dart';
 import '../Models/user_model.dart';
-import 'main_wrapper.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -18,19 +19,90 @@ class _MenuPageState extends State<MenuPage> {
   final UserDatabase _userDatabase = UserDatabase();
   final SessionData _sessionData = SessionData();
 
-  // Menambahkan item ke keranjang
+  // Variabel lokasi
+  Position? _currentPosition;
+  String? _currentAddress = "Memuat lokasi...";
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  // ============================================
+  // 🔵 Fungsi untuk mendapatkan lokasi pengguna
+  // ============================================
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _currentAddress = "Memuat lokasi...";
+    });
+
+    try {
+      // Cek service GPS aktif
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() => _currentAddress = "Layanan lokasi dimatikan");
+        return;
+      }
+
+      // Cek & minta izin lokasi
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() => _currentAddress = "Izin lokasi ditolak");
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() => _currentAddress = "Izin lokasi ditolak permanen");
+        return;
+      }
+
+      // GPS dapat digunakan → ambil posisi
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      _currentPosition = position;
+
+      // Ambil nama alamat dari koordinat
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+
+        setState(() {
+          _currentAddress = "${place.subLocality ?? ""} ${place.locality ?? ""}, ${place.country ?? ""}";
+        });
+      } else {
+        setState(() => _currentAddress = "Alamat tidak ditemukan");
+      }
+    } catch (e) {
+      setState(() => _currentAddress = "Gagal memuat lokasi");
+    }
+  }
+
+  // ============================================
+  // 🔵 ADD ITEM TO CART
+  // ============================================
   void _addItemToCart(Map<String, dynamic> item) {
     setState(() {
       final index = _sessionData.shoppingCart.indexWhere(
-            (cartItem) => cartItem['name'] == item['name'],
+            (cartItem) =>
+        cartItem['item'] != null &&
+            cartItem['item']['name'] == item['name'],
       );
 
       if (index != -1) {
         _sessionData.shoppingCart[index]['quantity'] += 1;
       } else {
         _sessionData.shoppingCart.add({
-          'name': item['name'],
-          'price': item['price'],
+          'item': item,
           'quantity': 1,
         });
       }
@@ -40,12 +112,14 @@ class _MenuPageState extends State<MenuPage> {
       SnackBar(
         content: Text('${item['name']} berhasil ditambahkan ke keranjang!'),
         backgroundColor: primaryColor,
-        duration: const Duration(milliseconds: 1000),
+        duration: const Duration(milliseconds: 900),
       ),
     );
   }
 
-  // Menampilkan daftar item per kategori
+  // ============================================
+  // 🔵 PRODUCT LIST
+  // ============================================
   Widget _buildItemList() {
     final filteredItems = _sessionData.mockMenu
         .where((item) => item['category'] == selectedCategory)
@@ -54,7 +128,7 @@ class _MenuPageState extends State<MenuPage> {
     return Column(
       children: filteredItems.map((item) {
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Container(
             decoration: BoxDecoration(
               color: primaryColor.withOpacity(0.08),
@@ -62,11 +136,11 @@ class _MenuPageState extends State<MenuPage> {
               border: Border.all(color: primaryColor, width: 1.5),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Ikon kategori
+                  // ICON
                   Container(
                     width: 70,
                     height: 70,
@@ -74,14 +148,11 @@ class _MenuPageState extends State<MenuPage> {
                       color: secondaryColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(
-                      item['icon'],
-                      color: primaryColor,
-                      size: 38,
-                    ),
+                    child: Icon(item['icon'], color: primaryColor, size: 38),
                   ),
                   const SizedBox(width: 15),
-                  // Info item
+
+                  // TEXT INFO
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,14 +168,16 @@ class _MenuPageState extends State<MenuPage> {
                         const SizedBox(height: 4),
                         Text(
                           item['desc'],
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.didactGothic(
                             fontSize: 14,
                             color: primaryColor.withOpacity(0.8),
                           ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
                         ),
+
                         const SizedBox(height: 8),
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -116,6 +189,7 @@ class _MenuPageState extends State<MenuPage> {
                                 color: accentColor,
                               ),
                             ),
+
                             GestureDetector(
                               onTap: () => _addItemToCart(item),
                               child: Container(
@@ -142,7 +216,7 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  // Daftar kategori
+  // CATEGORY NAMES
   final List<String> _categories = [
     'BREAD',
     'FILLED BUN',
@@ -151,6 +225,9 @@ class _MenuPageState extends State<MenuPage> {
     'COOKIE',
   ];
 
+  // ============================================
+  // 🔵 UI
+  // ============================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,7 +240,6 @@ class _MenuPageState extends State<MenuPage> {
       ),
       body: CustomScrollView(
         slivers: [
-          // Header
           SliverAppBar(
             automaticallyImplyLeading: false,
             pinned: true,
@@ -173,9 +249,8 @@ class _MenuPageState extends State<MenuPage> {
               titlePadding: EdgeInsets.zero,
               centerTitle: true,
               title: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 color: primaryColor,
-                padding:
-                const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,18 +264,28 @@ class _MenuPageState extends State<MenuPage> {
                         letterSpacing: 1.5,
                       ),
                     ),
-                    Padding(
-                      padding:
-                      const EdgeInsets.only(top: 4.0, bottom: 12.0),
-                      child: Text(
-                        '( Baca Lokasi Sekarang di Maps )',
-                        style: GoogleFonts.didactGothic(
-                          fontSize: 14,
-                          color: baseColor.withOpacity(0.9),
+
+                    // ==============================
+                    // 🔵 Lokasi saat ini
+                    // ==============================
+                    GestureDetector(
+                      onTap: _getCurrentLocation,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 12),
+                        child: Text(
+                          _currentAddress ?? "Klik untuk dapatkan lokasi",
+                          style: GoogleFonts.didactGothic(
+                            fontSize: 14,
+                            color: baseColor.withOpacity(0.9),
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ),
-                    // Search Bar
+
+                    // ==============================
+                    // SEARCH BAR
+                    // ==============================
                     Container(
                       height: 50,
                       decoration: BoxDecoration(
@@ -215,8 +300,7 @@ class _MenuPageState extends State<MenuPage> {
                         ],
                       ),
                       child: Padding(
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 15.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: Row(
                           children: [
                             const Icon(Icons.search, color: Colors.brown),
@@ -225,7 +309,8 @@ class _MenuPageState extends State<MenuPage> {
                               child: Text(
                                 'Search your Preferred Order',
                                 style: GoogleFonts.didactGothic(
-                                    color: Colors.brown.withOpacity(0.6)),
+                                  color: Colors.brown.withOpacity(0.6),
+                                ),
                               ),
                             ),
                             const Icon(Icons.mic, color: Colors.brown),
@@ -239,7 +324,9 @@ class _MenuPageState extends State<MenuPage> {
             ),
           ),
 
-          // Konten Utama
+          // ============================================
+          // BODY KATEGORI + PRODUK
+          // ============================================
           SliverList(
             delegate: SliverChildListDelegate([
               Padding(
@@ -247,24 +334,21 @@ class _MenuPageState extends State<MenuPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Sidebar kategori
+                    // SIDE CATEGORIES
                     Column(
                       children: _categories.map((category) {
-                        final isSelected = category == selectedCategory;
+                        bool isSelected = category == selectedCategory;
 
                         return GestureDetector(
-                          onTap: () {
-                            setState(() => selectedCategory = category);
-                          },
+                          onTap: () =>
+                              setState(() => selectedCategory = category),
                           child: Container(
                             width: 100,
-                            margin:
-                            const EdgeInsets.only(bottom: 15, left: 10),
+                            margin: const EdgeInsets.only(bottom: 15, left: 10),
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: isSelected
-                                  ? primaryColor
-                                  : Colors.transparent,
+                              color:
+                              isSelected ? primaryColor : Colors.transparent,
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
                                 color: isSelected
@@ -276,17 +360,11 @@ class _MenuPageState extends State<MenuPage> {
                             child: Column(
                               children: [
                                 Icon(
-                                  _sessionData.mockMenu
-                                      .firstWhere(
-                                          (e) =>
-                                      e['category'] == category,
-                                      orElse: () => {
-                                        'icon': Icons.fastfood
-                                      })['icon'] ??
-                                      Icons.fastfood,
-                                  color: isSelected
-                                      ? baseColor
-                                      : primaryColor,
+                                  _sessionData.mockMenu.firstWhere(
+                                        (e) => e['category'] == category,
+                                    orElse: () => {'icon': Icons.fastfood},
+                                  )['icon'],
+                                  color: isSelected ? baseColor : primaryColor,
                                   size: 35,
                                 ),
                                 const SizedBox(height: 5),
@@ -294,9 +372,7 @@ class _MenuPageState extends State<MenuPage> {
                                   category,
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.didactGothic(
-                                    color: isSelected
-                                        ? baseColor
-                                        : primaryColor,
+                                    color: isSelected ? baseColor : primaryColor,
                                     fontWeight: isSelected
                                         ? FontWeight.bold
                                         : FontWeight.normal,
@@ -310,10 +386,8 @@ class _MenuPageState extends State<MenuPage> {
                       }).toList(),
                     ),
 
-                    // Daftar Item
-                    Expanded(
-                      child: _buildItemList(),
-                    ),
+                    // PRODUCT LIST
+                    Expanded(child: _buildItemList()),
                   ],
                 ),
               ),

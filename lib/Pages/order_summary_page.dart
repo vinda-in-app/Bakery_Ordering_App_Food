@@ -12,12 +12,23 @@ class OrderSummaryPage extends StatefulWidget {
 }
 
 class _OrderSummaryPageState extends State<OrderSummaryPage> {
-  final sessionData = SessionData(); // ✅ instance dari singleton
+  final sessionData = SessionData();
 
+  // =============================
+  //  SAFE SUBTOTAL CALCULATION
+  // =============================
   double get subtotal {
     double total = 0;
+
     for (var item in sessionData.shoppingCart) {
-      total += item['item']['price'] * item['quantity'];
+      final product = item['item'];
+
+      if (product is Map<String, dynamic>) {
+        final price = product['price'] ?? 0;
+        final qty = item['quantity'] ?? 1;
+
+        total += (price * qty);
+      }
     }
     return total;
   }
@@ -25,6 +36,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   double get tax => subtotal * 0.1;
   double get total => subtotal + tax;
 
+  // =============================
+  //  UI COMPONENTS
+  // =============================
   Widget _buildInfoContainer(String title, String value, {IconData? icon}) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -73,7 +87,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
+            blurRadius: 9,
             offset: const Offset(0, 3),
           )
         ],
@@ -91,6 +105,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     );
   }
 
+  // =============================
+  //  CONFIRM ORDER
+  // =============================
   void _confirmOrder() {
     showDialog(
       context: context,
@@ -115,15 +132,19 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     );
   }
 
+  // =============================
+  //  MAIN UI
+  // =============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('SUMMARY ORDER',
-            style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
+        title: Text('ORDER SUMMARY',
+            style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)
+        ),
         centerTitle: true,
-        backgroundColor: primaryColor.withOpacity(0.9),
-        foregroundColor: Colors.white,
+        backgroundColor: baseColor.withOpacity(0.9),
+        foregroundColor: Colors.black,
       ),
       backgroundColor: Colors.grey[100],
       body: SingleChildScrollView(
@@ -131,14 +152,16 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 📍 LOCATION
             _buildInfoContainer(
               'LOCATION OF PICK-UP IN =',
               sessionData.address,
               icon: Icons.location_on,
             ),
+
             const SizedBox(height: 15),
 
-            // 🥐 ORDER LIST
+            // 🍞 ORDER LIST
             _buildSummaryContainer(
               title: 'ORDER SUMMARY =',
               content: Column(
@@ -147,14 +170,22 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     ? [
                   Text(
                     'Keranjang Anda kosong. Tambahkan item dari Menu.',
-                    style: GoogleFonts.didactGothic(color: primaryColor),
+                    style:
+                    GoogleFonts.didactGothic(color: primaryColor),
                   )
                 ]
                     : sessionData.shoppingCart.map((cartItem) {
-                  final item =
-                  cartItem['item'] as Map<String, dynamic>; // ✅ Map
-                  final quantity = cartItem['quantity'] as int;
-                  final totalHarga = item['price'] * quantity;
+                  final item = cartItem['item'];
+
+                  if (item is! Map<String, dynamic>) {
+                    return const SizedBox.shrink(); // skip invalid item
+                  }
+
+                  final name = item['name'] ?? 'Unknown';
+                  final price = item['price'] ?? 0;
+                  final quantity = cartItem['quantity'] ?? 1;
+
+                  final totalPrice = price * quantity;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -163,7 +194,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       children: [
                         Flexible(
                           child: Text(
-                            '${item['name']}  x $quantity',
+                            '$name  x $quantity',
                             style: GoogleFonts.didactGothic(
                               color: primaryColor,
                               fontSize: 14,
@@ -171,7 +202,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                           ),
                         ),
                         Text(
-                          'Rp ${totalHarga.toStringAsFixed(0)},-',
+                          'Rp ${totalPrice.toStringAsFixed(0)},-',
                           style: GoogleFonts.fredoka(
                             color: primaryColor,
                             fontSize: 14,
@@ -184,6 +215,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 }).toList(),
               ),
             ),
+
             const SizedBox(height: 15),
 
             // 💳 PAYMENT
@@ -194,6 +226,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 style: GoogleFonts.didactGothic(color: primaryColor),
               ),
             ),
+
             const SizedBox(height: 15),
 
             // 💰 PRICE BREAKDOWN
@@ -211,7 +244,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
             const SizedBox(height: 30),
 
-            // ✅ Confirm Button
+            // 🟩 CONFIRM BUTTON
             ElevatedButton(
               onPressed: sessionData.shoppingCart.isEmpty ? null : _confirmOrder,
               style: ElevatedButton.styleFrom(
@@ -234,6 +267,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     );
   }
 
+  // =============================
+  //  PRICE ROW WIDGET
+  // =============================
   Widget _buildPriceRow(String label, double value, {bool bold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),

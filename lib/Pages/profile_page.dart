@@ -19,7 +19,7 @@ class ProfilePage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: secondaryColor, size: 24),
+          Icon(icon, color: baseColor, size: 24),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
@@ -27,11 +27,11 @@ class ProfilePage extends StatelessWidget {
               children: [
                 Text(label,
                     style: GoogleFonts.didactGothic(
-                        color: secondaryColor.withOpacity(0.7),
-                        fontSize: 12)),
+                        color: baseColor.withOpacity(0.7),
+                        fontSize: 14)),
                 Text(value,
                     style: GoogleFonts.didactGothic(
-                        color: secondaryColor,
+                        color: baseColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w600)),
               ],
@@ -46,7 +46,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text('USER PROFILE',
+          title: Text('PROFILE PAGE',
               style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
           centerTitle: true),
       body: SingleChildScrollView(
@@ -76,7 +76,7 @@ class ProfilePage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                  color: accentColor,
+                  color: baseColor,
                   borderRadius: BorderRadius.circular(15)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -84,7 +84,7 @@ class ProfilePage extends StatelessWidget {
                   const Icon(Icons.star, color: primaryColor, size: 30),
                   const SizedBox(width: 10),
                   Text(
-                    'Poin Loyalitas Anda: ${sessionData.userPoints.toStringAsFixed(0)}',
+                    'Poin Loyalty Anda: ${sessionData.userPoints.toStringAsFixed(0)}',
                     style: GoogleFonts.fredoka(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -95,13 +95,13 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            _buildProfileInfo('Nama Lengkap', sessionData.name, Icons.person),
-            _buildProfileInfo('Username', sessionData.username, Icons.badge),
-            _buildProfileInfo('Email', sessionData.email, Icons.email),
-            _buildProfileInfo('Address', sessionData.address, Icons.home),
-            _buildProfileInfo('Gender', sessionData.gender, Icons.face),
-            _buildProfileInfo('Birthdate', sessionData.birthdate, Icons.calendar_today),
-            _buildProfileInfo('Birthplace', sessionData.birthplace, Icons.location_city),
+            _buildProfileInfo('Nama Pelanggan =', sessionData.name, Icons.person),
+            _buildProfileInfo('Username =', sessionData.username, Icons.badge),
+            _buildProfileInfo('Email =', sessionData.email, Icons.email),
+            _buildProfileInfo('Address =', sessionData.address, Icons.home),
+            _buildProfileInfo('Gender =', sessionData.gender, Icons.face),
+            _buildProfileInfo('Birthdate =', sessionData.birthdate, Icons.calendar_today),
+            _buildProfileInfo('Birthplace =', sessionData.birthplace, Icons.location_city),
 
             const SizedBox(height: 30),
             ElevatedButton(
@@ -109,7 +109,7 @@ class ProfilePage extends StatelessWidget {
                 sessionData.clearSession(); // ✅ Tambahkan juga agar logout bersih
                 Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade100),
               child: Text('LOG OUT', style: GoogleFonts.fredoka(fontSize: 18)),
             ),
           ],

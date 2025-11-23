@@ -32,8 +32,8 @@ class _LogInPageState extends State<LogInPage> {
     // Mengisi otomatis untuk tujuan demo/testing
     if (_userDatabase.mockDatabase.containsKey('pelanggansetia')) {
       _usernameController.text = 'pelanggansetia';
-      _passwordController.text = 'password123';
-      _emailController.text = 'pelanggansetia@mail.com';
+      _passwordController.text = '123456';
+      _emailController.text = 'pelanggan@email.com';
     }
   }
 
@@ -47,36 +47,41 @@ class _LogInPageState extends State<LogInPage> {
 
 
   void _handleLogin() {
-    final String username = _usernameController.text.trim();
-    final String password = _passwordController.text;
+    try {
+      final String username = _usernameController.text.trim();
+      final String password = _passwordController.text;
 
-    // Email tidak divalidasi, hanya username dan password
+      if (username.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username dan Password wajib diisi!')),
+        );
+        return;
+      }
 
-    // 1. Validasi Input Kosong
-    if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username dan Password wajib diisi!')),
-      );
-      return;
+      final userData = _userDatabase.mockDatabase[username];
+
+      if (userData != null && userData.password == password) {
+        _sessionData.loadFromDatabase(userData);
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainWrapper()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login Gagal123: Username atau Password salah.'),
+            backgroundColor: accentColor,
+          ),
+        );
+      }
     }
+    catch (e) {
+      print('Login error: ${e.toString()}');
 
-    // 2. Cek di Mock Database
-    final userData = _userDatabase.mockDatabase[username];
-
-    if (userData != null && userData.password == password) {
-      // 3. Login Sukses: Muat data ke sesi
-      _sessionData.loadFromDatabase(userData);
-
-      // 4. Navigasi ke halaman utama
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainWrapper()),
-      );
-    } else {
-      // 5. Login Gagal
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login Gagal: Username atau Password salah.'),
-          backgroundColor: accentColor,
+        SnackBar(
+          content: Text('Terjadi kesalahan: $e'),
+          backgroundColor: Colors.red,
         ),
       );
     }

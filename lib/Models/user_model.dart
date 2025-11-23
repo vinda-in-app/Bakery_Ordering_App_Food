@@ -313,7 +313,7 @@ final Map<String, UserModel> mockDatabase = {
   'pelanggansetia': UserModel(
     name: 'Pelanggan Setia',
     username: 'pelanggansetia',
-    email: 'pelanggan@example.com',
+    email: 'pelanggan@email.com',
     password: '123456',
     address:
     'Jl. Kenari Raya, RT.005/RW.007, Poris Jaya, Kota Tangerang, Banten',

@@ -186,7 +186,7 @@ class _SignInPageState extends State<SignInPage> {
               ),
               child: DropdownButtonFormField<String>(
                 decoration: const InputDecoration(border: InputBorder.none),
-                hint: Text('Choose your Gender here! ( Dropdown Man/Women )', style: GoogleFonts.didactGothic(color: baseColor.withOpacity(0.8))),
+                hint: Text('Choose your Gender here!', style: GoogleFonts.didactGothic(color: baseColor.withOpacity(0.8))),
                 value: _selectedGender,
                 items: _genders.map((String value) {
                   return DropdownMenuItem<String>(
@@ -214,7 +214,7 @@ class _SignInPageState extends State<SignInPage> {
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
-                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year} ( Date Picker )',
+                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                   style: GoogleFonts.didactGothic(color: primaryColor, fontSize: 16),
                 ),
               ),
@@ -231,7 +231,7 @@ class _SignInPageState extends State<SignInPage> {
               ),
               child: DropdownButtonFormField<String>(
                 decoration: const InputDecoration(border: InputBorder.none),
-                hint: Text('Choose your Place of Birth here! ( Dropdown )', style: GoogleFonts.didactGothic(color: baseColor.withOpacity(0.8))),
+                hint: Text('Choose your Place of Birth here!', style: GoogleFonts.didactGothic(color: baseColor.withOpacity(0.8))),
                 value: _selectedBirthplace,
                 items: _birthplaces.map((String value) {
                   return DropdownMenuItem<String>(
