@@ -1,39 +1,70 @@
-import '../Models/user_model.dart';
+// lib/DB/user_database.dart
+import 'dart:async';
 
-/// --- MOCK DATABASE (SINGLETON) ---
-/// Kelas ini mensimulasikan database yang menyimpan semua akun pengguna.
-/// Di aplikasi nyata, ini adalah Firebase/SQL/server API.
+import '../Models/user_model.dart';
+import 'sqlite_helper.dart';
+
+/// UserDatabase sekarang jadi wrapper untuk SQLite,
+/// tetap pakai pola Singleton supaya gampang dipanggil.
 class UserDatabase {
   // Singleton setup
   static final UserDatabase _instance = UserDatabase._internal();
-  factory UserDatabase() { return _instance; }
+  factory UserDatabase() => _instance;
   UserDatabase._internal();
 
-  /// Map yang menyimpan semua akun, di mana Key adalah username (lowercase).
-  final Map<String, UserModel> mockDatabase = {
-    'pelanggansetia': UserModel(
-      name: "Pelanggan Setia",
-      username: "pelanggansetia",
-      email: "pelanggan@email.com",
-      password: "123456", // Password untuk akun mock
-      address: "Jl. Kenari Raya, RT. 005 / RW. 007, Poris Jaya, Kec. Batuceper, Kota Tangerang, Banten 15122",
-      gender: "Women",
-      birthdate: "01/01/1990",
-      birthplace: "Jakarta",
-      userPoints: 1250,
-      shoppingCart: [],
-      selectedPaymentMethod: 'Debit',
-    ),
-  };
+  final SQLiteHelper _sqliteHelper = SQLiteHelper();
 
-  /// Metode untuk menambahkan pengguna baru ke database mock
-  void addUser(UserModel user) {
-    mockDatabase[user.username.toLowerCase()] = user;
+  // ---------------------------------------------------
+  //   OPTIONAL: Seed user default "pelanggansetia"
+  //   (supaya perilaku mirip mockDatabase lama)
+  // ---------------------------------------------------
+  Future<void> _ensureSeedUser() async {
+    const defaultUsername = 'pelanggansetia';
+
+    final existing = await _sqliteHelper.getUserByUsername(defaultUsername);
+    if (existing != null) return;
+
+    final UserModel defaultUser = UserModel(
+      name: 'Pelanggan Setia',
+      username: 'pelanggansetia',
+      email: 'pelanggan@email.com',
+      // NOTE: sekarang masih password mentah
+      // kalau nanti pakai hashPassword(), ganti bagian ini.
+      password: '123456',
+      address:
+      'Jl. Kenari Raya, RT.005/RW.007, Poris Jaya, Kota Tangerang, Banten',
+      gender: 'Female',
+      birthdate: '2000-01-01',
+      birthplace: 'Jakarta',
+      userPoints: 250.0,
+      shoppingCart: <Map<String, dynamic>>[],
+      selectedPaymentMethod: 'Debit',
+    );
+
+    await _sqliteHelper.insertUser(defaultUser);
   }
 
-  /// Metode untuk mencari pengguna berdasarkan username
-  UserModel? findUser(String username) {
-    return mockDatabase[username.toLowerCase()];
+  // ---------------------------------------------------
+  //           API PENGGANTI MOCK DATABASE
+  // ---------------------------------------------------
+
+  /// Tambah user baru ke SQLite (pengganti addUser di mockDatabase)
+  Future<int> addUser(UserModel user) async {
+    await _ensureSeedUser(); // opsional, boleh dihapus kalau nggak perlu seed
+    return await _sqliteHelper.insertUser(user);
+  }
+
+  /// Cari user berdasarkan username (pengganti findUser di mockDatabase)
+  Future<UserModel?> findUser(String username) async {
+    await _ensureSeedUser(); // opsional
+    return await _sqliteHelper.getUserByUsername(username);
+  }
+
+  /// Ambil semua user dari tabel `users`
+  Future<List<UserModel>> getAllUsers() async {
+    final db = await _sqliteHelper.db;
+    final List<Map<String, dynamic>> maps = await db.query('users');
+
+    return maps.map((map) => UserModel.fromMap(map)).toList();
   }
 }
-

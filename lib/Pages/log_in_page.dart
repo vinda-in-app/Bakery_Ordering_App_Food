@@ -1,11 +1,12 @@
+// File: lib/Pages/log_in_page.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../Theme/app_theme.dart';
 import '../Widgets/rounded_input.dart';
-import '../DB/user_database.dart';
+import '../DB/sqlite_helper.dart';      // ⬅️ PAKAI SQLITE
 import '../Models/user_model.dart';
-import 'main_wrapper.dart'; // Untuk navigasi ke MainWrapper
+import 'main_wrapper.dart';
 
 class LogInPage extends StatefulWidget {
   const LogInPage({super.key});
@@ -15,27 +16,18 @@ class LogInPage extends StatefulWidget {
 }
 
 class _LogInPageState extends State<LogInPage> {
-  // Controller untuk mengambil input dari user
+  // Controller input
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController(); // Controller tambahan untuk email
+  final TextEditingController _emailController = TextEditingController();
 
-  // Akses instance SessionData dan UserDatabase
+  // Session (diambil dari UserModel setelah login)
   final SessionData _sessionData = SessionData();
-  final UserDatabase _userDatabase = UserDatabase();
+
+  // SQLite helper
+  final SQLiteHelper _sqliteHelper = SQLiteHelper();
 
   bool _obscurePassword = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // Mengisi otomatis untuk tujuan demo/testing
-    if (_userDatabase.mockDatabase.containsKey('pelanggansetia')) {
-      _usernameController.text = 'pelanggansetia';
-      _passwordController.text = '123456';
-      _emailController.text = 'pelanggan@email.com';
-    }
-  }
 
   @override
   void dispose() {
@@ -45,70 +37,92 @@ class _LogInPageState extends State<LogInPage> {
     super.dispose();
   }
 
+  // -------------------------------------------------
+  //                 LOGIN FUNCTION (SQLite)
+  // -------------------------------------------------
+  Future<void> _handleLogin() async {
+    final String username = _usernameController.text.trim().toLowerCase();
+    final String password = _passwordController.text;
 
-  void _handleLogin() {
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Username dan Password tidak boleh kosong!"),
+        ),
+      );
+      return;
+    }
+
     try {
-      final String username = _usernameController.text.trim();
-      final String password = _passwordController.text;
+      // 🔍 Ambil user dari SQLite (case-insensitive, by username)
+      final UserModel? user =
+      await _sqliteHelper.getUserByUsername(username);
 
-      if (username.isEmpty || password.isEmpty) {
+      if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username dan Password wajib diisi!')),
+          const SnackBar(
+            content: Text("Akun tidak ditemukan."),
+            backgroundColor: accentColor,
+          ),
         );
         return;
       }
 
-      final userData = _userDatabase.mockDatabase[username];
-
-      if (userData != null && userData.password == password) {
-        _sessionData.loadFromDatabase(userData);
-
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainWrapper()),
-        );
-      } else {
+      // 🔐 Cek password
+      // NOTE:
+      //  - Kalau di SIGN IN kamu simpan password "mentah", pakai perbandingan langsung:
+      //      if (user.password != password) { ... }
+      //  - Kalau nanti pakai hashing (security.dart), ganti bagian ini agar cocok
+      if (user.password != password) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Login Gagal123: Username atau Password salah.'),
+            content: Text("Password salah."),
             backgroundColor: accentColor,
           ),
         );
+        return;
       }
-    }
-    catch (e) {
-      print('Login error: ${e.toString()}');
 
+      // ✔ Login berhasil → simpan ke SessionData
+      _sessionData.loadFromDatabase(user);
+
+      // Pindah ke halaman utama
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainWrapper()),
+      );
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: Colors.red,
+          content: Text("Terjadi kesalahan saat login: $e"),
+          backgroundColor: accentColor,
         ),
       );
     }
   }
 
+  // -------------------------------------------------
+  //                         UI
+  // -------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: baseColor,
+      appBar: AppBar(
+        title: Text(
+          'LOG - IN FORM',
+          style: GoogleFonts.fredoka(color: primaryColor),
+        ),
+        backgroundColor: baseColor,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: primaryColor),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 30.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 80),
-
-            // Judul LOG - IN FORM
-            Text(
-              'LOG - IN FORM',
-              style: GoogleFonts.fredoka(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 10),
+            // Deskripsi singkat
             Text(
               'Please log - in to continue to the App!',
               style: GoogleFonts.didactGothic(
@@ -116,14 +130,17 @@ class _LogInPageState extends State<LogInPage> {
                 color: primaryColor,
               ),
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 30),
 
-            // INPUT USERNAME
+            // USERNAME
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Username =',
-                style: GoogleFonts.didactGothic(fontSize: 18, color: primaryColor),
+                style: GoogleFonts.didactGothic(
+                  fontSize: 18,
+                  color: primaryColor,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -133,27 +150,34 @@ class _LogInPageState extends State<LogInPage> {
             ),
             const SizedBox(height: 20),
 
-            // INPUT EMAIL (Opsional, tapi ada di mockup login)
+            // EMAIL (optional visual only)
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Email =',
-                style: GoogleFonts.didactGothic(fontSize: 18, color: primaryColor),
+                style: GoogleFonts.didactGothic(
+                  fontSize: 18,
+                  color: primaryColor,
+                ),
               ),
             ),
             const SizedBox(height: 8),
             RoundedInputField(
-              controller: _emailController, // Menggunakan controller baru
+              controller: _emailController,
               hintText: 'Insert Your Email Here!',
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
 
-            // INPUT PASSWORD
+            // PASSWORD
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Password =',
-                style: GoogleFonts.didactGothic(fontSize: 18, color: primaryColor),
+                style: GoogleFonts.didactGothic(
+                  fontSize: 18,
+                  color: primaryColor,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -168,7 +192,9 @@ class _LogInPageState extends State<LogInPage> {
                 ),
                 IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    _obscurePassword
+                        ? Icons.visibility_off
+                        : Icons.visibility,
                     color: primaryColor,
                   ),
                   onPressed: () {
@@ -179,72 +205,50 @@ class _LogInPageState extends State<LogInPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 60),
+            const SizedBox(height: 40),
 
-            // LOGO & TEXT
-            Image.asset(
-              'assets/bread_icon.png', // Gantilah dengan path ikon roti Anda
-              height: 120,
-              errorBuilder: (context, error, stackTrace) {
-                // Placeholder jika gambar tidak ditemukan
-                return const Icon(Icons.cake, size: 120, color: primaryColor);
-              },
-            ),
-            const SizedBox(height: 15),
-            Text(
-              'COZY',
-              style: GoogleFonts.fredoka(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
+            // LOGO (opsional, sama seperti sebelumnya)
+            Center(
+              child: Image.asset(
+                'assets/bread_icon.png',
+                height: 120,
+                errorBuilder: (_, __, ___) =>
+                const Icon(Icons.cake, size: 120, color: primaryColor),
               ),
             ),
-            Text(
-              'OVEN',
-              style: GoogleFonts.fredoka(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-              ),
-            ),
-            Text(
-              'BAKERY',
-              style: GoogleFonts.fredoka(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-              ),
-            ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 40),
 
-            // LOG IN NOW BUTTON
-            GestureDetector(
-              onTap: _handleLogin,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                decoration: BoxDecoration(
-                  color: primaryColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: secondaryColor, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+            // BUTTON LOGIN
+            SizedBox(
+              height: 55,
+              child: ElevatedButton(
+                onPressed: _handleLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 5,
                 ),
                 child: Text(
                   'LOG - IN NOW !',
-                  textAlign: TextAlign.center,
                   style: GoogleFonts.fredoka(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: baseColor,
-                    letterSpacing: 2,
                   ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Info kecil
+            Center(
+              child: Text(
+                'Pastikan username & password sudah benar.',
+                style: GoogleFonts.didactGothic(
+                  fontSize: 14,
+                  color: primaryColor.withOpacity(0.8),
                 ),
               ),
             ),

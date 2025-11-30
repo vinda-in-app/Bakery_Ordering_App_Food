@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../Models/user_model.dart';
 import '../Theme/app_theme.dart';
 import 'main_wrapper.dart';
+import 'payment_page.dart';
 
 class OrderSummaryPage extends StatefulWidget {
   const OrderSummaryPage({super.key});
@@ -33,11 +34,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     return total;
   }
 
-  double get tax => subtotal * 0.1;
-  double get total => subtotal + tax;
-
   // =============================
-  //  UI COMPONENTS
+  //  MAIN ORDER INFO WIDGET
   // =============================
   Widget _buildInfoContainer(String title, String value, {IconData? icon}) {
     return Container(
@@ -56,15 +54,22 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: GoogleFonts.fredoka(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor)),
+                Text(
+                  title,
+                  style: GoogleFonts.fredoka(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: primaryColor,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(value,
-                    style: GoogleFonts.didactGothic(
-                        fontSize: 14, color: Colors.black87)),
+                Text(
+                  value,
+                  style: GoogleFonts.didactGothic(
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
+                ),
               ],
             ),
           ),
@@ -73,23 +78,39 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     );
   }
 
-  Widget _buildSummaryContainer({
-    required String title,
-    required Widget content,
-  }) {
+  // =============================
+  //  SECTION TITLE
+  // =============================
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 8),
+      child: Text(
+        title,
+        style: GoogleFonts.fredoka(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+          color: primaryColor,
+        ),
+      ),
+    );
+  }
+
+  // =============================
+  //  REUSABLE CARD SECTION
+  // =============================
+  Widget _buildCardSection({required String title, required Widget content}) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: primaryColor.withOpacity(0.2)),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 9,
-            offset: const Offset(0, 3),
-          )
+            color: Colors.grey.withOpacity(0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
         ],
       ),
       child: Column(
@@ -109,25 +130,18 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   //  CONFIRM ORDER
   // =============================
   void _confirmOrder() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Order Confirmed"),
-        content: const Text("Your bakery order has been placed successfully!"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const MainWrapper()),
-              );
-            },
-            child: Text("OK",
-                style: GoogleFonts.fredoka(color: primaryColor, fontSize: 16)),
-          ),
-        ],
+    // Kalau keranjang kosong, kasih info dan tidak lanjut
+    if (sessionData.shoppingCart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Keranjang masih kosong')),
+      );
+      return;
+    }
+
+    // Lanjut ke halaman pembayaran
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PaymentPage(),
       ),
     );
   }
@@ -140,8 +154,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('ORDER SUMMARY',
-            style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)
-        ),
+            style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: baseColor.withOpacity(0.9),
         foregroundColor: Colors.black,
@@ -150,103 +163,115 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 📍 LOCATION
+            // =============================
+            //  CUSTOMER INFO (from Session)
+            // =============================
+            _buildSectionTitle('Customer Information'),
             _buildInfoContainer(
-              'LOCATION OF PICK-UP IN =',
+              'Customer Name',
+              sessionData.name,
+              icon: Icons.person_outline,
+            ),
+            const SizedBox(height: 10),
+            _buildInfoContainer(
+              'Customer Address',
               sessionData.address,
-              icon: Icons.location_on,
+              icon: Icons.location_on_outlined,
             ),
 
-            const SizedBox(height: 15),
-
-            // 🍞 ORDER LIST
-            _buildSummaryContainer(
-              title: 'ORDER SUMMARY =',
-              content: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: sessionData.shoppingCart.isEmpty
-                    ? [
-                  Text(
-                    'Keranjang Anda kosong. Tambahkan item dari Menu.',
-                    style:
-                    GoogleFonts.didactGothic(color: primaryColor),
-                  )
-                ]
-                    : sessionData.shoppingCart.map((cartItem) {
-                  final item = cartItem['item'];
-
-                  if (item is! Map<String, dynamic>) {
-                    return const SizedBox.shrink(); // skip invalid item
-                  }
-
-                  final name = item['name'] ?? 'Unknown';
-                  final price = item['price'] ?? 0;
-                  final quantity = cartItem['quantity'] ?? 1;
-
-                  final totalPrice = price * quantity;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            '$name  x $quantity',
-                            style: GoogleFonts.didactGothic(
-                              color: primaryColor,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          'Rp ${totalPrice.toStringAsFixed(0)},-',
-                          style: GoogleFonts.fredoka(
-                            color: primaryColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // 💳 PAYMENT
-            _buildSummaryContainer(
-              title: 'PAYMENT METHOD =',
-              content: Text(
-                sessionData.selectedPaymentMethod,
-                style: GoogleFonts.didactGothic(color: primaryColor),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // 💰 PRICE BREAKDOWN
-            _buildSummaryContainer(
-              title: 'PRICE DETAILS =',
+            // =============================
+            //  ORDER DETAILS
+            // =============================
+            _buildSectionTitle('Order Details'),
+            _buildCardSection(
+              title: 'Items Ordered',
               content: Column(
                 children: [
-                  _buildPriceRow('Subtotal', subtotal),
-                  _buildPriceRow('Tax (10%)', tax),
-                  const Divider(),
-                  _buildPriceRow('Total', total, bold: true),
+                  if (sessionData.shoppingCart.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        'No items in the cart.',
+                        style: GoogleFonts.didactGothic(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    )
+                  else
+                    ...sessionData.shoppingCart.map((cartItem) {
+                      final product = cartItem['item'] as Map<String, dynamic>?;
+                      if (product == null) return const SizedBox.shrink();
+
+                      final name = product['name'] ?? 'Unknown Item';
+                      final price = product['price'] ?? 0;
+                      final quantity = cartItem['quantity'] ?? 1;
+
+                      final totalPrice = price * quantity;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                '$name  x $quantity',
+                                style: GoogleFonts.didactGothic(
+                                  color: primaryColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'Rp ${totalPrice.toStringAsFixed(0)},-',
+                              style: GoogleFonts.fredoka(
+                                color: primaryColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                 ],
               ),
             ),
 
-            const SizedBox(height: 30),
+            // =============================
+            //  PAYMENT SUMMARY
+            // =============================
+            _buildSectionTitle('Payment Summary'),
+            _buildCardSection(
+              title: 'Payment Details',
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildPriceRow('Subtotal', subtotal),
+                  _buildPriceRow('Tax (10%)', subtotal * 0.10),
+                  const Divider(),
+                  _buildPriceRow('Total', subtotal * 1.10, bold: true),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Payment Method: ${sessionData.selectedPaymentMethod}',
+                    style: GoogleFonts.didactGothic(
+                      color: Colors.black87,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
 
             // 🟩 CONFIRM BUTTON
             ElevatedButton(
-              onPressed: sessionData.shoppingCart.isEmpty ? null : _confirmOrder,
+              onPressed:
+              sessionData.shoppingCart.isEmpty ? null : _confirmOrder,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 16),

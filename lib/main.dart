@@ -17,11 +17,6 @@ import 'Pages/log_in_page.dart';
 final sessionData = SessionData();
 
 void main() {
-  // 1. Inisialisasi data sesi awal:
-  // Memuat data pengguna default ('pelanggansetia') ke SessionData saat startup
-  // agar ada data yang siap digunakan di halaman Profile.
-  sessionData.loadFromDatabase(mockDatabase['pelanggansetia']!);
-
   // 2. Menjalankan aplikasi utama Flutter
   runApp(const BakeryApp());
 }

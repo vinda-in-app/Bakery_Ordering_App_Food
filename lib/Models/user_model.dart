@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
-/// Model untuk menyimpan data detail pengguna (dipakai di database dan session)
 class UserModel {
   final String name;
   final String username;
   final String email;
-  final String password; // Disimpan di database mock, tidak disarankan untuk real app
+  final String password; // hashed password
   final String address;
   final String gender;
   final String birthdate;
   final String birthplace;
   final double userPoints;
-
-  // Data transaksi yang disalin dari session saat checkout
   final List<Map<String, dynamic>> shoppingCart;
   final String selectedPaymentMethod;
 
@@ -29,6 +27,44 @@ class UserModel {
     required this.shoppingCart,
     required this.selectedPaymentMethod,
   });
+
+  // Serialize -> Map untuk SQLite
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'username': username,
+      'email': email,
+      'password': password,
+      'address': address,
+      'gender': gender,
+      'birthdate': birthdate,
+      'birthplace': birthplace,
+      'userPoints': userPoints,
+      'shoppingCart': jsonEncode(shoppingCart), // simpan sebagai string JSON
+      'selectedPaymentMethod': selectedPaymentMethod,
+    };
+  }
+
+  // Deserialize dari map
+  factory UserModel.fromMap(Map<String, dynamic> map) {
+    return UserModel(
+      name: map['name'] ?? '',
+      username: map['username'] ?? '',
+      email: map['email'] ?? '',
+      password: map['password'] ?? '',
+      address: map['address'] ?? '',
+      gender: map['gender'] ?? '',
+      birthdate: map['birthdate'] ?? '',
+      birthplace: map['birthplace'] ?? '',
+      userPoints: (map['userPoints'] is int)
+          ? (map['userPoints'] as int).toDouble()
+          : (map['userPoints'] is double ? map['userPoints'] : double.tryParse(map['userPoints'].toString()) ?? 0.0),
+      shoppingCart: map['shoppingCart'] != null
+          ? List<Map<String, dynamic>>.from(jsonDecode(map['shoppingCart']))
+          : <Map<String, dynamic>>[],
+      selectedPaymentMethod: map['selectedPaymentMethod'] ?? 'Debit',
+    );
+  }
 
   // Metode untuk membuat salinan data dengan pembaruan
   UserModel copyWith({
@@ -309,19 +345,19 @@ class SessionData {
 }
 
 /// --- MOCK DATABASE / SESSION UNTUK TESTING ---
-final Map<String, UserModel> mockDatabase = {
-  'pelanggansetia': UserModel(
-    name: 'Pelanggan Setia',
-    username: 'pelanggansetia',
-    email: 'pelanggan@email.com',
-    password: '123456',
-    address:
-    'Jl. Kenari Raya, RT.005/RW.007, Poris Jaya, Kota Tangerang, Banten',
-    gender: 'Perempuan',
-    birthdate: '2000-01-01',
-    birthplace: 'Tangerang',
-    userPoints: 250.0,
-    shoppingCart: [],
-    selectedPaymentMethod: 'Debit',
-  ),
-};
+// final Map<String, UserModel> mockDatabase = {
+//   'pelanggansetia': UserModel(
+//     name: 'Pelanggan Setia',
+//     username: 'pelanggansetia',
+//     email: 'pelanggan@email.com',
+//     password: '123456',
+//     address:
+//     'Jl. Kenari Raya, RT.005/RW.007, Poris Jaya, Kota Tangerang, Banten',
+//     gender: 'Perempuan',
+//     birthdate: '2000-01-01',
+//     birthplace: 'Tangerang',
+//     userPoints: 250.0,
+//     shoppingCart: [],
+//     selectedPaymentMethod: 'Debit',
+//   ),
+// };
